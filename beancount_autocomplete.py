@@ -15,7 +15,7 @@ class BeancountAutocompleteListener(sublime_plugin.EventListener):
         settings = self.get_settings()
         file_path = settings.get("beancount_file")
 
-        # print(f"Checking path: {file_path}") # DEBUG LINE
+        # print("Checking path: {}".format(file_path)) # DEBUG LINE
 
         if not file_path or not os.path.exists(file_path):
             # print("File path not found!") # DEBUG LINE
@@ -46,7 +46,7 @@ class BeancountAutocompleteListener(sublime_plugin.EventListener):
                         if match:
                             closed_accounts.add(match.group())
         except Exception as e:
-            print(f"Beancount Autocomplete Error: {e}")
+            print("Beancount Autocomplete Error: {}".format(e))
 
         # Only include accounts that are opened but not closed
         active_accounts = opened_accounts - closed_accounts
