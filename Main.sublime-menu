@@ -1,0 +1,32 @@
+[
+    {
+        "id": "preferences",
+        "children": [
+            {
+                "id": "package-settings",
+                "children": [
+                    {
+                        "caption": "BeancountAutocomplete",
+                        "children": [
+                            {
+                                "caption": "Settings",
+                                "command": "edit_settings",
+                                "args": {
+                                    "base_file": "${packages}/BeancountAutocomplete/BeancountAutocomplete.sublime-settings",
+                                    "default": "{\n\t\"beancount_file\": \"/path/to/your/accounts.beancount\"\n}\n"
+                                }
+                            },
+                            {
+                                "caption": "README",
+                                "command": "open_file",
+                                "args": {
+                                    "file": "${packages}/BeancountAutocomplete/README.md"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+]
