@@ -215,6 +215,99 @@ class TestBeancountAutocompleteListener(unittest.TestCase):
             )
             self.assertEqual(len(completions), 1, "Should match case insensitively")
 
+    def test_load_accounts_excludes_closed_accounts(self):
+        """Test that closed accounts are excluded from the account list."""
+        beancount_content = """
+2020-01-01 open Assets:Bank:Checking
+2020-01-01 open Assets:Bank:Savings
+2020-01-01 open Expenses:OldCategory
+2020-01-01 open Liabilities:CreditCard
+
+2020-06-15 close Expenses:OldCategory
+2020-12-31 close Liabilities:CreditCard
+
+2021-01-01 * "Transaction"
+  Assets:Bank:Checking  100.00 USD
+  Expenses:OldCategory
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.beancount', delete=False) as f:
+            f.write(beancount_content)
+            temp_file = f.name
+
+        try:
+            mock_settings = Mock()
+            mock_settings.get.return_value = temp_file
+
+            with patch.object(self.listener, 'get_settings', return_value=mock_settings):
+                accounts = self.listener.load_accounts()
+
+            # Should include opened accounts
+            self.assertIn("Assets:Bank:Checking", accounts,
+                "Should include open account: Assets:Bank:Checking")
+            self.assertIn("Assets:Bank:Savings", accounts,
+                "Should include open account: Assets:Bank:Savings")
+
+            # Should NOT include closed accounts
+            self.assertNotIn("Expenses:OldCategory", accounts,
+                "Should exclude closed account: Expenses:OldCategory")
+            self.assertNotIn("Liabilities:CreditCard", accounts,
+                "Should exclude closed account: Liabilities:CreditCard")
+
+        finally:
+            os.unlink(temp_file)
+
+    def test_load_accounts_with_only_closed_accounts(self):
+        """Test handling of file where all accounts are closed."""
+        beancount_content = """
+2020-01-01 open Assets:OldAccount
+2020-12-31 close Assets:OldAccount
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.beancount', delete=False) as f:
+            f.write(beancount_content)
+            temp_file = f.name
+
+        try:
+            mock_settings = Mock()
+            mock_settings.get.return_value = temp_file
+
+            with patch.object(self.listener, 'get_settings', return_value=mock_settings):
+                accounts = self.listener.load_accounts()
+
+            # Should return empty list when all accounts are closed
+            self.assertEqual(accounts, [],
+                "Should return empty list when all accounts are closed")
+
+        finally:
+            os.unlink(temp_file)
+
+    def test_load_accounts_close_without_open(self):
+        """Test handling of close directive without corresponding open."""
+        beancount_content = """
+2020-01-01 open Assets:Bank:Checking
+2020-12-31 close Assets:NonExistent:Account
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.beancount', delete=False) as f:
+            f.write(beancount_content)
+            temp_file = f.name
+
+        try:
+            mock_settings = Mock()
+            mock_settings.get.return_value = temp_file
+
+            with patch.object(self.listener, 'get_settings', return_value=mock_settings):
+                accounts = self.listener.load_accounts()
+
+            # Should still include the opened account
+            self.assertIn("Assets:Bank:Checking", accounts,
+                "Should include opened account even with orphaned close directive")
+
+            # Should not crash or include the non-existent account
+            self.assertNotIn("Assets:NonExistent:Account", accounts,
+                "Should not include account that was closed without being opened")
+
+        finally:
+            os.unlink(temp_file)
+
 
 if __name__ == '__main__':
     unittest.main()
