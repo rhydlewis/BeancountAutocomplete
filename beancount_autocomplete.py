@@ -55,18 +55,30 @@ class BeancountAutocompleteListener(sublime_plugin.EventListener):
         return self.accounts_cache
 
     def on_query_completions(self, view, prefix, locations):
-        # Only trigger for beancount files or if we are in a likely account position
-        # You can refine this by checking view.scope_name(locations[0]) 
-        # if you use a Beancount syntax package.
-        
+        # Only trigger for beancount files
+        # Check file extension or syntax
+        file_name = view.file_name()
+
+        # If file has .beancount extension, allow completions
+        if file_name and file_name.endswith('.beancount'):
+            pass  # Continue to load accounts
+        # Otherwise, check for Beancount syntax scope
+        elif locations:
+            scope = view.scope_name(locations[0])
+            if 'source.beancount' not in scope:
+                return None
+        else:
+            # No file name and no locations to check scope - don't trigger
+            return None
+
         accounts = self.load_accounts()
         if not accounts:
             return None
 
         # Format for Sublime's autocomplete: (trigger, insertion_text)
         completions = [
-            (account + "\tAccount", account) 
-            for account in accounts 
+            (account + "\tAccount", account)
+            for account in accounts
             if prefix.lower() in account.lower()
         ]
 

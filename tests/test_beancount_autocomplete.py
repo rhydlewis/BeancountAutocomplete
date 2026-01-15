@@ -308,6 +308,81 @@ class TestBeancountAutocompleteListener(unittest.TestCase):
         finally:
             os.unlink(temp_file)
 
+    def test_no_completions_for_non_beancount_files(self):
+        """Test that completions don't trigger for non-Beancount files."""
+        self.listener.accounts_cache = ["Assets:Bank:Checking"]
+        self.listener.last_load_time = 1
+
+        # Mock view for a .md file
+        mock_view = Mock()
+        mock_view.file_name.return_value = "/path/to/file.md"
+        mock_view.scope_name.return_value = "text.html.markdown"
+
+        with patch.object(self.listener, 'load_accounts', return_value=self.listener.accounts_cache):
+            result = self.listener.on_query_completions(
+                mock_view, "Assets", [0]
+            )
+
+        # Should return None for non-Beancount files
+        self.assertIsNone(result, "Should not provide completions for .md files")
+
+    def test_completions_for_beancount_file_by_extension(self):
+        """Test that completions trigger for .beancount files."""
+        self.listener.accounts_cache = ["Assets:Bank:Checking"]
+        self.listener.last_load_time = 1
+
+        # Mock view for a .beancount file
+        mock_view = Mock()
+        mock_view.file_name.return_value = "/path/to/accounts.beancount"
+
+        with patch.object(self.listener, 'load_accounts', return_value=self.listener.accounts_cache):
+            result = self.listener.on_query_completions(
+                mock_view, "Assets", [0]
+            )
+
+        # Should return completions for .beancount files
+        self.assertIsNotNone(result, "Should provide completions for .beancount files")
+        completions, flags = result
+        self.assertEqual(len(completions), 1)
+
+    def test_completions_for_beancount_syntax_scope(self):
+        """Test that completions trigger for files with Beancount syntax."""
+        self.listener.accounts_cache = ["Assets:Bank:Checking"]
+        self.listener.last_load_time = 1
+
+        # Mock view with Beancount syntax but different extension
+        mock_view = Mock()
+        mock_view.file_name.return_value = "/path/to/ledger.txt"
+        mock_view.scope_name.return_value = "source.beancount"
+
+        with patch.object(self.listener, 'load_accounts', return_value=self.listener.accounts_cache):
+            result = self.listener.on_query_completions(
+                mock_view, "Assets", [0]
+            )
+
+        # Should return completions for files with Beancount syntax
+        self.assertIsNotNone(result, "Should provide completions for Beancount syntax scope")
+        completions, flags = result
+        self.assertEqual(len(completions), 1)
+
+    def test_no_completions_for_unsaved_non_beancount_file(self):
+        """Test that completions don't trigger for unsaved non-Beancount files."""
+        self.listener.accounts_cache = ["Assets:Bank:Checking"]
+        self.listener.last_load_time = 1
+
+        # Mock view for unsaved file (no file name)
+        mock_view = Mock()
+        mock_view.file_name.return_value = None
+        mock_view.scope_name.return_value = "text.plain"
+
+        with patch.object(self.listener, 'load_accounts', return_value=self.listener.accounts_cache):
+            result = self.listener.on_query_completions(
+                mock_view, "Assets", [0]
+            )
+
+        # Should return None for unsaved non-Beancount files
+        self.assertIsNone(result, "Should not provide completions for unsaved non-Beancount files")
+
 
 if __name__ == '__main__':
     unittest.main()
