@@ -105,6 +105,26 @@ The plugin specifically looks for `open` directives in your Beancount file to bu
 - Sublime Text 3 or 4
 - A Beancount ledger file
 
+## Development
+
+### Running Tests
+
+The plugin includes a comprehensive test suite using Python's `unittest` framework. To run the tests:
+
+```bash
+python3 -m unittest tests.test_beancount_autocomplete -v
+```
+
+The tests cover:
+- Account name regex pattern matching
+- Loading accounts from Beancount files
+- File caching behavior
+- Completion filtering by prefix
+- Case-insensitive matching
+- Error handling for missing files
+
+All tests use mocks for Sublime Text's API, so they can run independently without Sublime Text installed.
+
 ## Troubleshooting
 
 ### No completions appear
