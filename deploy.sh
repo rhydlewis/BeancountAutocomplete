@@ -14,54 +14,66 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-# Determine OS and set target directory
+# Determine OS and set packages directory
 if [[ "$OSTYPE" == "darwin"* ]]; then
     # macOS
-    TARGET_DIR="$HOME/Library/Application Support/Sublime Text/Packages/User"
+    PACKAGES_DIR="$HOME/Library/Application Support/Sublime Text/Packages"
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     # Linux
-    TARGET_DIR="$HOME/.config/sublime-text/Packages/User"
+    PACKAGES_DIR="$HOME/.config/sublime-text/Packages"
 elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
     # Windows
-    TARGET_DIR="$APPDATA/Sublime Text/Packages/User"
+    PACKAGES_DIR="$APPDATA/Sublime Text/Packages"
 else
     echo -e "${RED}Error: Unsupported operating system: $OSTYPE${NC}"
     exit 1
 fi
 
-# Check if target directory exists
-if [ ! -d "$TARGET_DIR" ]; then
-    echo -e "${RED}Error: Sublime Text User packages directory not found at:${NC}"
-    echo "  $TARGET_DIR"
+# Check if packages directory exists
+if [ ! -d "$PACKAGES_DIR" ]; then
+    echo -e "${RED}Error: Sublime Text Packages directory not found at:${NC}"
+    echo "  $PACKAGES_DIR"
     echo ""
     echo "Please ensure Sublime Text is installed."
     exit 1
 fi
 
-# Source file
-SOURCE_FILE="beancount_autocomplete.py"
+# Create BeancountAutocomplete package directory
+TARGET_DIR="$PACKAGES_DIR/BeancountAutocomplete"
+mkdir -p "$TARGET_DIR"
 
-if [ ! -f "$SOURCE_FILE" ]; then
-    echo -e "${RED}Error: Source file not found: $SOURCE_FILE${NC}"
-    echo "Please run this script from the repository root."
-    exit 1
+# Files to deploy
+FILES_TO_DEPLOY=(
+    "beancount_autocomplete.py"
+    "BeancountAutocomplete.sublime-settings"
+    "Main.sublime-menu"
+    "README.md"
+)
+
+# Check all source files exist
+for file in "${FILES_TO_DEPLOY[@]}"; do
+    if [ ! -f "$file" ]; then
+        echo -e "${RED}Error: Source file not found: $file${NC}"
+        echo "Please run this script from the repository root."
+        exit 1
+    fi
+done
+
+# Backup existing package directory if it exists
+if [ -d "$TARGET_DIR" ] && [ "$(ls -A $TARGET_DIR)" ]; then
+    BACKUP_DIR="$TARGET_DIR.backup.$(date +%Y%m%d_%H%M%S)"
+    echo -e "${YELLOW}Backing up existing package to:${NC}"
+    echo "  $BACKUP_DIR"
+    cp -r "$TARGET_DIR" "$BACKUP_DIR"
 fi
 
-# Target file
-TARGET_FILE="$TARGET_DIR/$SOURCE_FILE"
-
-# Backup existing file if it exists
-if [ -f "$TARGET_FILE" ]; then
-    BACKUP_FILE="$TARGET_FILE.backup.$(date +%Y%m%d_%H%M%S)"
-    echo -e "${YELLOW}Backing up existing file to:${NC}"
-    echo "  $BACKUP_FILE"
-    cp "$TARGET_FILE" "$BACKUP_FILE"
-fi
-
-# Copy the file
+# Copy all files
 echo -e "${GREEN}Deploying plugin to:${NC}"
-echo "  $TARGET_FILE"
-cp "$SOURCE_FILE" "$TARGET_FILE"
+echo "  $TARGET_DIR"
+for file in "${FILES_TO_DEPLOY[@]}"; do
+    cp "$file" "$TARGET_DIR/"
+    echo "  ✓ $file"
+done
 
 echo -e "${GREEN}✓ Deployment successful!${NC}"
 echo ""
