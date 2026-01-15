@@ -107,6 +107,24 @@ The plugin specifically looks for `open` directives in your Beancount file to bu
 
 ## Development
 
+### Local Deployment
+
+For local development and testing, use the included deployment script:
+
+```bash
+./deploy.sh
+```
+
+This script:
+- Detects your operating system (macOS, Linux, Windows)
+- Copies `beancount_autocomplete.py` to Sublime Text's User packages directory
+- Creates a timestamped backup of any existing version
+- Works across all platforms
+
+After deployment:
+1. Restart Sublime Text or reload the plugin via Command Palette (`Ctrl+Shift+P` → "Plugin Development: Reload Plugin")
+2. Test your changes in a Beancount file
+
 ### Running Tests
 
 The plugin includes a comprehensive test suite using Python's `unittest` framework. To run the tests:
